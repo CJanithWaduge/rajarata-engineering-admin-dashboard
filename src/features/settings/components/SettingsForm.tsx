@@ -10,8 +10,10 @@ import { TextField } from '../../../components/ui/TextField'
 import { Alert } from '../../../components/ui/Alert'
 import { SettingsFieldGroup } from './SettingsFieldGroup'
 import { SettingsImageField } from './SettingsImageField'
+import { ExistingMediaOptimizer } from '../../home/components/ExistingMediaOptimizer'
+import type { ExistingMediaCandidate } from '../../home/existingMedia'
 import { readSettingsImageFile } from '../media'
-import type { SettingsDraft, SettingsImageSelection } from '../types'
+import type { SettingsDraft, SettingsImageSelection, SettingsNewImage } from '../types'
 
 type Props = {
   defaultValues: SettingsFormValues
@@ -125,6 +127,33 @@ export function SettingsForm({
     setIsImageDirty(true)
   }
 
+  /**
+   * Applies an approved Phase 8A optimizer candidate as a normal new-image
+   * selection so it flows through the same draft/save pipeline as a manual
+   * upload (preview, meta label, inline data URL on save).
+   */
+  const handleOptimizeApprove = (candidate: ExistingMediaCandidate) => {
+    const previewUrl = URL.createObjectURL(candidate.file)
+    if (previewRef.current) URL.revokeObjectURL?.(previewRef.current)
+    previewRef.current = previewUrl
+
+    const selection: SettingsNewImage = {
+      kind: 'new',
+      file: candidate.file,
+      previewUrl,
+      width: candidate.width,
+      height: candidate.height,
+      size: candidate.size,
+      contentType: candidate.contentType,
+      originalSize: candidate.originalSize,
+      optimized: true,
+    }
+
+    setImage(selection)
+    setImageError(null)
+    setIsImageDirty(true)
+  }
+
   const handleInvalid = () => {
     window.setTimeout(() => {
       const firstInvalid = document.querySelector<HTMLElement>('[aria-invalid="true"]')
@@ -200,6 +229,15 @@ export function SettingsForm({
             showClear={image.kind !== 'none'}
             onClear={handleImageClear}
           />
+          <div className="mt-4">
+            <ExistingMediaOptimizer
+              id="settings-logo-optimize"
+              kind="logo"
+              stored={image.kind === 'stored' ? image.image : null}
+              disabled={isSaving}
+              onApprove={handleOptimizeApprove}
+            />
+          </div>
         </div>
         <div className="sm:col-span-2">
           <TextField

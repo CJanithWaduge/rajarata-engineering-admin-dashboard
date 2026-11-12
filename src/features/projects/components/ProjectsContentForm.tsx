@@ -7,10 +7,12 @@ import { CollapsibleSection } from '../../../components/ui/CollapsibleSection'
 import { UnsavedChangesGuard } from '../../../components/ui/UnsavedChangesGuard'
 import { PROJECT_COUNT } from '../constants'
 import { imageSelectionFromContent, valuesFromContent } from '../defaults'
+import type { ExistingMediaCandidate } from '../../home/existingMedia'
 import { readProjectImageFile } from '../media'
 import { projectsFormSchema } from '../schema'
 import type {
   ProjectImageSelection,
+  ProjectNewImage,
   ProjectsContent,
   ProjectsDraft,
   ProjectsFormValues,
@@ -141,6 +143,44 @@ export function ProjectsContentForm({
     setIsImageDirty(true)
   }
 
+  /**
+   * Applies an approved Phase 8A optimizer candidate as a normal new-image
+   * selection so it flows through the same draft/save pipeline as a manual
+   * upload (preview, meta label, inline data URL on save).
+   */
+  const handleOptimizeApprove = (
+    index: number,
+    candidate: ExistingMediaCandidate,
+  ) => {
+    if (previewUrls.current[index]) {
+      URL.revokeObjectURL?.(previewUrls.current[index]!)
+    }
+    const previewUrl = URL.createObjectURL(candidate.file)
+    previewUrls.current[index] = previewUrl
+
+    const selection: ProjectNewImage = {
+      kind: 'new',
+      file: candidate.file,
+      previewUrl,
+      width: candidate.width,
+      height: candidate.height,
+      size: candidate.size,
+      contentType: candidate.contentType,
+      originalSize: candidate.originalSize,
+      optimized: true,
+    }
+
+    setImages((current) =>
+      current.map((image, i) => (i === index ? selection : image)),
+    )
+    setImageErrors((current) => {
+      const next = { ...current }
+      delete next[index]
+      return next
+    })
+    setIsImageDirty(true)
+  }
+
   const handleInvalid = (formErrors: FieldErrors<ProjectsFormValues>) => {
     setOpen((current) => ({
       ...current,
@@ -232,6 +272,9 @@ export function ProjectsContentForm({
             isValidating={validatingIndex === index}
             onImageSelect={(file) => void handleImageSelect(index, file)}
             onImageClear={() => handleImageClear(index)}
+            onOptimizeApprove={(candidate) =>
+              handleOptimizeApprove(index, candidate)
+            }
           />
         ))}
       </CollapsibleSection>

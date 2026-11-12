@@ -1,7 +1,9 @@
 import { TextField } from '../../../components/ui/TextField'
+import type { ExistingMediaCandidate } from '../existingMedia'
 import { formatBytes } from '../imageValidation'
 import type { CardDraft, CardTextField } from '../types'
 import { CollapsibleSection } from '../../../components/ui/CollapsibleSection'
+import { ExistingMediaOptimizer } from './ExistingMediaOptimizer'
 import { HomeImageField } from './HomeImageField'
 
 type Props = {
@@ -14,6 +16,7 @@ type Props = {
   open: boolean
   onToggle: () => void
   onImageSelect: (file: File) => void
+  onOptimizeApprove: (candidate: ExistingMediaCandidate) => void
   onChange: (field: CardTextField, value: string) => void
 }
 
@@ -47,6 +50,7 @@ export function FeaturedProjectEditor({
   open,
   onToggle,
   onImageSelect,
+  onOptimizeApprove,
   onChange,
 }: Props) {
   const errorFor = (field: CardTextField) => errors[`cards.${index}.${field}`]
@@ -80,6 +84,15 @@ export function FeaturedProjectEditor({
           disabled={disabled}
           onSelect={onImageSelect}
         />
+        <div className="mt-4">
+          <ExistingMediaOptimizer
+            id={`home-card-${index}-optimize`}
+            kind="card"
+            stored={card.image.kind === 'stored' ? card.image.image : null}
+            disabled={disabled}
+            onApprove={onOptimizeApprove}
+          />
+        </div>
       </div>
 
       <div className="sm:col-span-2">

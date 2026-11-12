@@ -3,10 +3,12 @@ import { SelectField } from '../../../components/ui/SelectField'
 import { TextArea } from '../../../components/ui/TextArea'
 import { TextField } from '../../../components/ui/TextField'
 import { PROJECT_CATEGORY_OPTIONS, PROJECT_TEXT_LIMITS } from '../constants'
+import type { ExistingMediaCandidate } from '../../home/existingMedia'
 import type {
   ProjectImageSelection,
   ProjectsFormValues,
 } from '../types'
+import { ExistingMediaOptimizer } from '../../home/components/ExistingMediaOptimizer'
 import { ProjectImageField } from './ProjectImageField'
 
 type Props = {
@@ -19,6 +21,7 @@ type Props = {
   isValidating: boolean
   onImageSelect?: (file: File) => void
   onImageClear?: () => void
+  onOptimizeApprove?: (candidate: ExistingMediaCandidate) => void
 }
 
 /**
@@ -36,6 +39,7 @@ export function ProjectCardEditor({
   isValidating,
   onImageSelect,
   onImageClear,
+  onOptimizeApprove,
 }: Props) {
   const cardErrors = errors?.projects?.[index]
   const number = String(index + 1).padStart(2, '0')
@@ -77,6 +81,18 @@ export function ProjectCardEditor({
         showClear={image.kind !== 'none'}
         onClear={onImageClear}
       />
+
+      {onOptimizeApprove ? (
+        <div className="mt-4">
+          <ExistingMediaOptimizer
+            id={`projects-card-${index}-optimize`}
+            kind="card"
+            stored={image.kind === 'stored' ? image.image : null}
+            disabled={disabled}
+            onApprove={onOptimizeApprove}
+          />
+        </div>
+      ) : null}
 
       <div className="mt-5 grid gap-5 sm:grid-cols-2">
         <SelectField

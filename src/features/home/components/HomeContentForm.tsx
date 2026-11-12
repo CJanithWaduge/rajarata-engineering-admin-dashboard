@@ -6,9 +6,11 @@ import { TextField } from '../../../components/ui/TextField'
 import { UnsavedChangesGuard } from '../../../components/ui/UnsavedChangesGuard'
 import { CARD_COUNT, HOME_SERVICE_COUNT, type ImageKind } from '../constants'
 import { draftFromContent } from '../defaults'
+import type { ExistingMediaCandidate } from '../existingMedia'
 import { formatBytes, readImageFile } from '../imageValidation'
 import { validateHomeDraft } from '../validation'
 import type { CardTextField, HomeContent, HomeDraft, NewImage } from '../types'
+import { ExistingMediaOptimizer } from './ExistingMediaOptimizer'
 import { FeaturedProjectEditor } from './FeaturedProjectEditor'
 import { HomeImageField } from './HomeImageField'
 import {
@@ -176,6 +178,50 @@ export function HomeContentForm({
     setDirty(true)
   }
 
+  /**
+   * Applies an approved Phase 8A optimizer candidate as a normal new-image
+   * selection, so it flows through the same draft/save pipeline as a manual
+   * upload (preview, meta label, inline data URL on save).
+   */
+  const handleOptimizeApprove = (key: string, candidate: ExistingMediaCandidate) => {
+    const previewUrl = URL.createObjectURL(candidate.file)
+    const selection: NewImage = {
+      kind: 'new',
+      file: candidate.file,
+      previewUrl,
+      width: candidate.width,
+      height: candidate.height,
+      size: candidate.size,
+      contentType: candidate.contentType,
+      originalSize: candidate.originalSize,
+      optimized: true,
+    }
+
+    replacePreview(key, previewUrl)
+
+    if (key === 'hero') {
+      setDraft((current) => ({
+        ...current,
+        hero: { ...current.hero, image: selection },
+      }))
+    } else {
+      const index = Number(key.replace('card-', ''))
+      setDraft((current) => ({
+        ...current,
+        cards: current.cards.map((card, cardIndex) =>
+          cardIndex === index ? { ...card, image: selection } : card,
+        ),
+      }))
+    }
+
+    setImageErrors((current) => {
+      const next = { ...current }
+      delete next[key]
+      return next
+    })
+    setDirty(true)
+  }
+
   const handleCardChange = (index: number, field: CardTextField, value: string) => {
     setDraft((current) => ({
       ...current,
@@ -291,6 +337,15 @@ export function HomeContentForm({
             disabled={isSaving}
             onSelect={(file) => void handleImageSelect('hero', 'hero', file)}
           />
+          <div className="mt-4">
+            <ExistingMediaOptimizer
+              id="home-hero-optimize"
+              kind="hero"
+              stored={draft.hero.image.kind === 'stored' ? draft.hero.image.image : null}
+              disabled={isSaving}
+              onApprove={(candidate) => handleOptimizeApprove('hero', candidate)}
+            />
+          </div>
         </div>
         <div className="sm:col-span-2">
           <TextField
@@ -362,6 +417,9 @@ export function HomeContentForm({
             onToggle={() => toggleCard(index)}
             onImageSelect={(file) =>
               void handleImageSelect(`card-${index}`, 'card', file)
+            }
+            onOptimizeApprove={(candidate) =>
+              handleOptimizeApprove(`card-${index}`, candidate)
             }
             onChange={(field: CardTextField, value: string) =>
               handleCardChange(index, field, value)

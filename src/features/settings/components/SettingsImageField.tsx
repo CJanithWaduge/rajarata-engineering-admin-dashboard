@@ -36,7 +36,7 @@ export function SettingsImageField({
   showClear = false,
 }: Props) {
   const rule = LOGO_IMAGE_RULE
-  const target = INLINE_IMAGE_TARGETS.hero
+  const target = INLINE_IMAGE_TARGETS.logo
   const inlineHint = INLINE_MEDIA_ENABLED
     ? ` Saved inline at up to ${target.maxWidth} × ${target.maxHeight} px and ${INLINE_IMAGE_MAX_BYTES_LABEL.hero}.`
     : ''

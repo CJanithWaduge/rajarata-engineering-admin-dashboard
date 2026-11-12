@@ -203,14 +203,21 @@ export const COMPRESSION_QUALITIES = [0.82, 0.7, 0.58] as const
  * example on the Spark plan). The encoded images are stored as data URLs inside
  * the `site/home` document, which Firestore caps at 1 MiB, so these limits are
  * deliberately much smaller than the Storage limits. The four worst-case data
- * URLs together are about 580 KB, leaving plenty of room for the card text. */
+ * URLs together are about 580 KB, leaving plenty of room for the card text.
+ *
+ * Phase 8A ceilings sized to how the public page actually renders: the logo
+ * displays at ~40 CSS px (120 device px, so 384 is 3x oversampled) and the
+ * cards at ~384 CSS px (1074 device px at 3x, covered by 1080 wide). The hero
+ * keeps 1920 x 1080: it is the page's largest visual and stays untouched.
+ * Aspect ratios are exact (384:384 = 1:1, 1080:720 = 3:2, 1920:1080 = 16:9).
+ */
 export const INLINE_IMAGE_TARGETS: Record<
   ImageKind,
   { maxWidth: number; maxHeight: number }
 > = {
   hero: { maxWidth: 1920, maxHeight: 1080 },
-  card: { maxWidth: 1200, maxHeight: 800 },
-  logo: { maxWidth: 1080, maxHeight: 1080 },
+  card: { maxWidth: 1080, maxHeight: 720 },
+  logo: { maxWidth: 384, maxHeight: 384 },
 }
 
 export const INLINE_IMAGE_MAX_BYTES: Record<ImageKind, number> = {
@@ -226,6 +233,43 @@ export const INLINE_IMAGE_MAX_BYTES_LABEL: Record<ImageKind, string> = {
 }
 
 export const INLINE_COMPRESSION_QUALITIES = [0.7, 0.6, 0.5, 0.4, 0.3, 0.22] as const
+
+/**
+ * Existing-media optimizer (Phase 8A). A stored image is replaced only when a
+ * candidate meets every guardrail at once:
+ *
+ * - `EXISTING_MEDIA_BYTE_TARGET` — the candidate must be at most 90% of the
+ *   stored bytes, so an accepted image always shrinks the document.
+ * - `EXISTING_MEDIA_MIN_PSNR` — display-scale PSNR (measured at the size the
+ *   public page actually renders) must stay at or above 33 dB, so accepted
+ *   images are visually indistinguishable at their on-page size.
+ * - the per-kind inline byte cap still applies.
+ *
+ * When no candidate passes, the stored image is kept unchanged. The hero is
+ * excluded from optimization entirely: its original dimensions and quality are
+ * preserved by policy.
+ */
+export const EXISTING_MEDIA_BYTE_TARGET = 0.9
+
+export const EXISTING_MEDIA_MIN_PSNR = 33
+
+/** Tried in order (highest quality first) until a candidate passes. */
+export const EXISTING_MEDIA_QUALITIES = [0.7, 0.65, 0.6, 0.55, 0.5] as const
+
+/** Kinds the optimizer must never re-encode (Phase 8A approval). */
+export const EXISTING_MEDIA_EXCLUDED_KINDS: readonly ImageKind[] = ['hero']
+
+/**
+ * Worst-case device-pixel width each slot is rendered at on the public page
+ * (CSS px x device pixel ratio). PSNR is measured after scaling both images to
+ * this width, which is what a visitor actually sees: logo 40 CSS px at 3x,
+ * cards ~358 CSS px at 3x.
+ */
+export const EXISTING_MEDIA_DISPLAY_WIDTH: Record<ImageKind, number> = {
+  hero: 1380,
+  card: 1074,
+  logo: 120,
+}
 
 /** Leaves headroom below Firestore's 1 MiB document limit. */
 export const INLINE_MEDIA_DOC_BUDGET = 900_000

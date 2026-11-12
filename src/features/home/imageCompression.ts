@@ -63,7 +63,12 @@ export function compressionDimensions(
   return { width: targetWidth, height: targetHeight }
 }
 
-async function loadDrawable(file: File): Promise<Drawable> {
+/**
+ * Decodes a File into something `drawImage` accepts, preferring
+ * `createImageBitmap` and falling back to an `Image` element. Shared by the
+ * upload compressor and the Phase 8A existing-media optimizer.
+ */
+export async function loadDrawable(file: File): Promise<Drawable> {
   if (typeof createImageBitmap === 'function') {
     try {
       const bitmap = await createImageBitmap(file)
@@ -88,22 +93,70 @@ async function loadDrawable(file: File): Promise<Drawable> {
   }
 }
 
-function canvasToBlob(canvas: HTMLCanvasElement, quality: number): Promise<Blob> {
-  return new Promise((resolve, reject) => {
-    canvas.toBlob(
-      (blob) => {
-        if (blob) resolve(blob)
-        else reject(new Error('encode-failed'))
-      },
-      'image/jpeg',
-      quality,
-    )
+function canvasToBlob(
+  canvas: HTMLCanvasElement,
+  type: ImageContentType,
+  quality: number,
+): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    try {
+      canvas.toBlob((blob) => resolve(blob), type, quality)
+    } catch {
+      resolve(null)
+    }
   })
 }
 
 /**
- * Downscales and re-encodes an already-decoded image. JPEG is used because it is
- * universally supported by the Canvas encoder and these are photographic slots.
+ * Canvas WebP encoding support, detected once per session by encoding a 1x1
+ * probe and checking the type that comes back. Browsers that cannot encode
+ * WebP silently return PNG instead, which is what makes the type check the
+ * reliable signal. Cached so the ladder only pays for the probe once.
+ */
+let webpEncodeSupported: boolean | null = null
+
+async function detectWebpEncoding(): Promise<boolean> {
+  if (webpEncodeSupported !== null) return webpEncodeSupported
+  try {
+    const probe = document.createElement('canvas')
+    probe.width = 1
+    probe.height = 1
+    const blob = await canvasToBlob(probe, 'image/webp', 0.5)
+    webpEncodeSupported = blob !== null && blob.type === 'image/webp'
+  } catch {
+    webpEncodeSupported = false
+  }
+  return webpEncodeSupported
+}
+
+/**
+ * Encodes one quality rung. WebP is attempted first (it is materially smaller
+ * than JPEG at the same visual quality); browsers without WebP canvas encoding
+ * fall back to JPEG, and the logo always uses JPEG because the public site
+ * also points the favicon at the logo data URL.
+ */
+export async function encodeCanvasBlob(
+  canvas: HTMLCanvasElement,
+  quality: number,
+  allowWebp: boolean,
+): Promise<Blob> {
+  if (allowWebp && (await detectWebpEncoding())) {
+    const webp = await canvasToBlob(canvas, 'image/webp', quality)
+    if (webp && webp.type === 'image/webp') return webp
+    // The probe passed but this encode did not come back as WebP: treat the
+    // browser as unable to encode WebP and fall through to JPEG.
+    webpEncodeSupported = false
+  }
+
+  const jpeg = await canvasToBlob(canvas, 'image/jpeg', quality)
+  if (!jpeg) throw new Error('encode-failed')
+  return jpeg
+}
+
+/**
+ * Downscales and re-encodes an already-decoded image. WebP is preferred for
+ * photographic slots because it stores the same visual quality in fewer bytes;
+ * JPEG remains the universal fallback (and the only format used for the logo).
  * The caller revalidates the result before it can be saved.
  */
 export async function compressImage(
@@ -156,8 +209,10 @@ export async function compressImage(
     context.fillRect(0, 0, target.width, target.height)
     context.drawImage(drawable.source, 0, 0, target.width, target.height)
 
+    const allowWebp = kind !== 'logo'
+
     for (const quality of qualities) {
-      const blob = await canvasToBlob(canvas, quality)
+      const blob = await encodeCanvasBlob(canvas, quality, allowWebp)
       if (blob.size <= maxBytes) {
         const contentType: ImageContentType =
           blob.type === 'image/png'

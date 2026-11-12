@@ -9,6 +9,7 @@ import {
   imageSelectionFromContent,
   valuesFromContent,
 } from '../defaults'
+import type { ExistingMediaCandidate } from '../../home/existingMedia'
 import { formatAboutBytes, readAboutImageFile } from '../media'
 import { aboutFormSchema } from '../schema'
 import type {
@@ -16,7 +17,9 @@ import type {
   AboutDraft,
   AboutFormValues,
   AboutImageSelection,
+  AboutNewImage,
 } from '../types'
+import { ExistingMediaOptimizer } from '../../home/components/ExistingMediaOptimizer'
 import { AboutCtaEditor } from './AboutCtaEditor'
 import { AboutHeroEditor } from './AboutHeroEditor'
 import { AboutImageField } from './AboutImageField'
@@ -151,6 +154,33 @@ export function AboutContentForm({
     setIsImageDirty(true)
   }
 
+  /**
+   * Applies an approved Phase 8A optimizer candidate as a normal new-image
+   * selection so it flows through the same draft/save pipeline as a manual
+   * upload (preview, meta label, inline data URL on save).
+   */
+  const handleOptimizeApprove = (candidate: ExistingMediaCandidate) => {
+    const previewUrl = URL.createObjectURL(candidate.file)
+    if (previewRef.current) URL.revokeObjectURL?.(previewRef.current)
+    previewRef.current = previewUrl
+
+    const selection: AboutNewImage = {
+      kind: 'new',
+      file: candidate.file,
+      previewUrl,
+      width: candidate.width,
+      height: candidate.height,
+      size: candidate.size,
+      contentType: candidate.contentType,
+      originalSize: candidate.originalSize,
+      optimized: true,
+    }
+
+    setImage(selection)
+    setImageError(null)
+    setIsImageDirty(true)
+  }
+
   const handleInvalid = (formErrors: FieldErrors<AboutFormValues>) => {
     setOpen((current) => ({
       ...current,
@@ -227,6 +257,15 @@ export function AboutContentForm({
           showClear={image.kind !== 'none'}
           onClear={handleImageClear}
         />
+        <div>
+          <ExistingMediaOptimizer
+            id="about-hero-optimize"
+            kind="hero"
+            stored={image.kind === 'stored' ? image.image : null}
+            disabled={isSaving}
+            onApprove={handleOptimizeApprove}
+          />
+        </div>
         <AboutHeroEditor
           register={register}
           errors={errors}
