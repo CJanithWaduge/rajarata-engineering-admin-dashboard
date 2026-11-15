@@ -1,6 +1,6 @@
 {
   "hosting": {
-    "site": "rajarata-engineering-admin-panel",
+    "site": "rajarata-engineering-panel",
     "public": "dist",
     "ignore": [
       "firebase.json",

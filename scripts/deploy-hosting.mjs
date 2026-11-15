@@ -65,4 +65,4 @@ if (deployment.status !== 0) {
   process.exit(deployment.status ?? 1);
 }
 
-console.log('Admin panel deployed. Visit the Hosting URL shown above (https://rajarata-engineering-admin-panel.web.app).');
+console.log('Admin panel deployed. Visit the Hosting URL shown above (https://rajarata-engineering-panel.web.app).');

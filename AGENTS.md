@@ -33,9 +33,9 @@
 ## Non-negotiable content rules
 
 - Never hardcode editable site content in JSX, constants, mock files, or seed data: hero copy, contact numbers, WhatsApp numbers, emails, addresses, service descriptions, image URLs, social links.
-  - **One deliberate exception:** `src/features/{services,about,projects}/seed-data.ts` plus `src/features/home/seed-data.ts`. These files exist only for the one-time "Seed content" migration button on Site Settings, which copies the public site's own build-time copy into `site/services`, `site/about`, `site/projects`, and the text slots of `site/home` (the three project cards and three service cards) so the admin forms start from the live page instead of blanks. The copy must stay verbatim and in sync with `rajarata-engineering-public-site/src/components/{services,about,projects,home}/`; paraphrase is a bug. Seed data never invents media or contact details: images stay empty, and `site/settings` is **never** seeded (contact values come from the public build-time env).
+  - **One deliberate exception:** `src/features/{services,about,projects}/seed-data.ts` plus `src/features/home/seed-data.ts`. These files exist only for the one-time "Seed content" migration button on Site Settings, which copies the public site's own build-time copy into `site/services`, `site/about`, `site/projects`, and the text slots of `site/home` (the three project cards and three service cards) so the admin forms start from the live page instead of blanks. The copy must stay verbatim and in sync with `rajarata-engineering-public-site/src/components/{services,about,projects,home}/`; paraphrase is a bug. Seed data never invents media or contact details: images stay empty, and `site/settings` is **never** seeded. Contact values have no build-time env source in the public site any more: until an admin saves them on the Site Settings page they come from the public site's own `src/lib/contactDefaults.ts`, which is content code, not configuration.
   - Any other seed/mock/demo file is still forbidden.
-- `.env` holds Firebase config and runtime flags only (`VITE_FIREBASE_*`) and is gitignored. Never print, echo, stage, or copy its values into source or docs.
+- `.env` holds Firebase config and runtime flags only (`VITE_FIREBASE_*`) and is gitignored. Never print, echo, stage, or copy its values into source or docs. The one exception is a single run of `scripts/seed-settings.mjs`, which accepts `SEED_*` variables from the process environment; those are passed for that invocation only and never stored in `.env`, so sample contact numbers cannot be left behind to overwrite live settings.
 - Anything prefixed `VITE_` is bundled into the client and publicly readable. The Firebase web config is not a secret; protection comes from Security Rules, not env secrecy.
 - `.env.example` must contain placeholders only. Site content never becomes a `VITE_` key.
 - Do not add fallback/demo content when a Firestore read fails; surface an error/empty state instead.
@@ -59,7 +59,7 @@
 
 ## Firebase project wiring (first-run checklist)
 
-- The app talks to the project in `.env` (`VITE_FIREBASE_PROJECT_ID`, currently `rajarata-engineering-admin`). `.firebaserc` pins the same project for the CLI, and `firebase.json` maps `firestore.rules` to the **named** database `default`.
+- The app talks to the project in `.env` (`VITE_FIREBASE_PROJECT_ID`, currently `rajarata-engineering`). `.firebaserc` pins the same project for the CLI, and `firebase.json` maps `firestore.rules` to the **named** database `default`.
 - **Named database, not `(default)`.** Google only allows creating the standard `(default)` database through the API on a billing-enabled (Blaze) plan; this project is on Spark. `databases/default` was created instead, so:
   - `VITE_FIREBASE_DATABASE_ID=default` selects it (`firebase.ts` calls `getFirestore(app, env.VITE_FIREBASE_DATABASE_ID)`). Set it to `(default)` to switch back — no code change.
   - `firebase.json` must keep `"database": "default"` in the `firestore` array, or the rules deploy silently targets a database that does not exist. Rules live per database.
@@ -69,7 +69,7 @@
   2. `firestore.rules` is deployed (`npm run deploy:rules`) and allows the signed-in admin to read their own `admins/{uid}` doc.
   3. Email/Password provider is enabled.
   4. The signing-in user exists in Authentication **and** has an `admins/{uid}` document with `active: true` (see `signInAdmin`).
-- Diagnose with the CLI: `npx firebase-tools login:list`, then `gcloud firestore databases list --project rajarata-engineering-admin`. Check the active CLI project with `npx firebase-tools use` — if it points somewhere else, deploy goes to the wrong project.
+- Diagnose with the CLI: `npx firebase-tools login:list`, then `gcloud firestore databases list --project rajarata-engineering`. Check the active CLI project with `npx firebase-tools use` — if it points somewhere else, deploy goes to the wrong project.
 - Error codes are mapped in `src/features/auth/errors.ts`. The app shows a plain message and logs `[auth] <mapped-code> (raw: <firebase-code>)` to the console outside tests — check the console first when a login message is vague. Unmapped codes fall back to `unknown`.
 
 ## Code layout
