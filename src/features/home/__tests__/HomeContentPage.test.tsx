@@ -64,6 +64,7 @@ function content(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'Industrial Distribution',
         tag: 'MV / LV',
+        visible: true,
       },
       {
         image: image('card-2'),
@@ -71,6 +72,7 @@ function content(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'Commercial Panels',
         tag: 'Panels',
+        visible: true,
       },
       {
         image: image('card-3'),
@@ -78,6 +80,7 @@ function content(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'ELV Systems',
         tag: 'Automation',
+        visible: true,
       },
     ],
     featuredServices: [
@@ -134,6 +137,25 @@ describe('HomeContentPage', () => {
       expect.objectContaining({ cards: expect.any(Array) }),
       'uid-1',
     )
+  })
+
+  it('saves the per-card visibility toggle states', async () => {
+    const user = userEvent.setup()
+    render(<HomeContentPage />)
+
+    const toggles = screen.getAllByRole('switch')
+    expect(toggles).toHaveLength(9)
+    await user.click(toggles[8]!)
+    expect(screen.getAllByRole('switch')[8]).not.toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(await screen.findByText('Successfully saved changes')).toBeInTheDocument()
+    const draft = mocks.save.mock.calls[0]?.[0] as {
+      cards: Array<{ visible?: boolean }>
+    }
+    expect(draft.cards[8]?.visible).toBe(false)
+    expect(draft.cards[7]?.visible).toBe(true)
   })
 
   it('shows an error toast when saving fails', async () => {

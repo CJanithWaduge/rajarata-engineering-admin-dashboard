@@ -38,6 +38,11 @@ export type TrackRecordColumn = {
 }
 
 export type ProjectsFormValues = {
+  /**
+   * The "Project Page" tick. Unticked, the public site hides every link to
+   * /projects and redirects that route home; the content below is untouched.
+   */
+  pageVisible: boolean
   hero: {
     eyebrow: string
     title: string

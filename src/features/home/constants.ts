@@ -1,7 +1,19 @@
 import { isIconifyIconName } from '../../lib/iconify'
 import type { ImageContentType } from './types'
 
-export const CARD_COUNT = 3
+/**
+ * Fixed number of featured project cards on the Home page's "Featured
+ * Engineering Projects" carousel. The public page renders this many static
+ * cards, and the admin form edits all of them from `site/home`.
+ */
+export const CARD_COUNT = 9
+
+/**
+ * Minimum cards left visible on the Home carousel. The public layout shows
+ * exactly three cards per row on desktop, so fewer than three would leave an
+ * incomplete row and break the visual rhythm.
+ */
+export const MIN_VISIBLE_CARDS = 3
 
 /** Fixed number of cards in the Home page's "Our Electrical Services" grid. */
 export const HOME_SERVICE_COUNT = 3

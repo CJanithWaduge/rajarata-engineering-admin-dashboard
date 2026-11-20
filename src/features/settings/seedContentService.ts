@@ -21,8 +21,8 @@ export type SeedSummary = {
 
 /**
  * Seeding only covers the pages whose copy is stored as plain text: Services,
- * About, Projects, the featured Home project cards, and the three Home service
- * cards. Home images are retained when present; no media is invented.
+ * About, Projects, the nine featured Home project cards, and the three Home
+ * service cards. Home images are retained when present; no media is invented.
  * Settings contact details come from the public site's build-time environment,
  * so they are not written here.
  */
@@ -53,9 +53,10 @@ function toAboutDraft(content: AboutContent): AboutDraft {
 }
 
 function toProjectsDraft(content: ProjectsContent): ProjectsDraft {
-  const { hero, portfolio, trackRecord, cta } = content
+  const { pageVisible, hero, portfolio, trackRecord, cta } = content
 
   return {
+    pageVisible,
     hero,
     // The stored content keeps the image on each card; the form keeps the
     // images in a parallel list, so drop the card image before submitting.

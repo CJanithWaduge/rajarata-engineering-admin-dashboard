@@ -41,7 +41,7 @@ vi.mock('../storageService', () => ({
   deleteHomeObject: mocks.deleteHomeObject,
 }))
 
-import { createEmptyDraft } from '../defaults'
+import { createEmptyCard, createEmptyDraft, emptyProject } from '../defaults'
 import { getHomeContent, saveHomeContent } from '../homeContentService'
 import type { HomeContent, HomeDraft, HomeImage } from '../types'
 
@@ -79,6 +79,7 @@ function storedContent(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'Industrial Distribution',
         tag: 'MV / LV',
+        visible: true,
       },
       {
         image: image('card-2-old'),
@@ -86,6 +87,7 @@ function storedContent(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'Commercial Panels',
         tag: 'Panels',
+        visible: false,
       },
       {
         image: image('card-3-old'),
@@ -93,7 +95,10 @@ function storedContent(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'ELV Systems',
         tag: 'Automation',
+        visible: true,
       },
+      // The other six slots are blank so they parse to blank cards.
+      ...Array.from({ length: 6 }, () => emptyProject()),
     ],
     featuredServices: [
       {
@@ -127,12 +132,15 @@ function draftFrom(content: HomeContent): HomeDraft {
   return {
     hero: { image: { kind: 'stored', image: content.hero }, alt: content.hero.alt },
     cards: content.featuredProjects.map((project) => ({
-      image: { kind: 'stored', image: project.image },
+      image: project.image.url
+        ? { kind: 'stored' as const, image: project.image }
+        : { kind: 'none' as const },
       alt: project.image.alt,
       category: project.category,
       venue: project.venue,
       topic: project.topic,
       tag: project.tag,
+      visible: project.visible !== false,
     })),
     services: content.featuredServices.map((service) => ({
       icon: service.icon,
@@ -192,6 +200,7 @@ describe('getHomeContent', () => {
             venue: 'Anuradhapura',
             topic: 'Commercial Panels',
             tag: 'Panels',
+            visible: false,
           },
           {
             ...docImage('card-3-old'),
@@ -210,7 +219,10 @@ describe('getHomeContent', () => {
 
     expect(result.exists).toBe(true)
     expect(result.content?.hero.url).toContain('hero-old')
-    expect(result.content?.featuredProjects).toHaveLength(3)
+    expect(result.content?.featuredProjects).toHaveLength(9)
+    expect(result.content?.featuredProjects[0]?.visible).toBe(true)
+    expect(result.content?.featuredProjects[1]?.visible).toBe(false)
+    expect(result.content?.featuredProjects[3]).toEqual(emptyProject())
     expect(result.content?.updatedAt).toEqual(updatedAt)
     expect(result.content?.updatedBy).toBe('uid-1')
   })
@@ -228,7 +240,7 @@ describe('getHomeContent', () => {
 
     const result = await getHomeContent()
 
-    expect(result.content?.featuredProjects).toHaveLength(3)
+    expect(result.content?.featuredProjects).toHaveLength(9)
     expect(result.content?.featuredProjects[0]?.image.url).toBe('')
   })
 
@@ -293,6 +305,7 @@ describe('saveHomeContent', () => {
         imageUrl: string
         imagePath: string
         image?: unknown
+        visible?: boolean
       }>
       updatedBy: string
       updatedAt: string
@@ -303,10 +316,40 @@ describe('saveHomeContent', () => {
     expect(payload.featuredProjects[0]?.imagePath).toBe('home/card-1-old')
     expect(payload.featuredProjects[0]?.image).toBeUndefined()
     expect(payload.featuredProjects[0]?.venue).toBe('Anuradhapura')
+    expect(payload.featuredProjects[0]?.visible).toBe(true)
     expect(payload.featuredProjects[1]?.venue).toBe('Kandy')
+    expect(payload.featuredProjects[1]?.visible).toBe(false)
     expect(payload.featuredProjects[2]?.venue).toBe('Anuradhapura')
     expect(payload.updatedBy).toBe('uid-1')
     expect(payload.updatedAt).toBe('server-ts')
+  })
+
+  it('persists hidden visibility on non-blank cards', async () => {
+    const previous = storedContent()
+    const draft = draftFrom(previous)
+    draft.cards[2] = { ...draft.cards[2]!, visible: false }
+
+    await saveHomeContent(draft, 'uid-1', previous)
+
+    const payload = mocks.setDoc.mock.calls[0]?.[1] as {
+      featuredProjects: Array<{ visible?: boolean }>
+    }
+    expect(payload.featuredProjects[2]?.visible).toBe(false)
+    expect(payload.featuredProjects[0]?.visible).toBe(true)
+  })
+
+  it('persists hidden visibility on blank cards', async () => {
+    const draft = createEmptyDraft()
+    draft.cards[3] = { ...createEmptyCard(), visible: false }
+
+    await saveHomeContent(draft, 'uid-1', null)
+
+    const payload = mocks.setDoc.mock.calls[0]?.[1] as {
+      featuredProjects: Array<{ imageUrl: string; visible?: boolean }>
+    }
+    expect(payload.featuredProjects[3]?.visible).toBe(false)
+    expect(payload.featuredProjects[3]?.imageUrl).toBe('')
+    expect(payload.featuredProjects[0]?.visible).toBe(true)
   })
 
   it('writes a flat image shape that the reader can parse back', async () => {
@@ -473,7 +516,7 @@ describe('saveHomeContent', () => {
       featuredProjects: Array<{ imageUrl: string; category: string }>
     }
     expect(payload.hero.imageUrl).toBe('')
-    expect(payload.featuredProjects).toHaveLength(3)
+    expect(payload.featuredProjects).toHaveLength(9)
     expect(payload.featuredProjects[0]?.imageUrl).toContain('card-1-new')
     expect(payload.featuredProjects[0]?.category).toBe('Industrial')
     expect(payload.featuredProjects[1]?.imageUrl).toBe('')
@@ -530,11 +573,11 @@ describe('saveHomeContent', () => {
       featuredProjects: Array<{ imageUrl: string }>
     }
     expect(payload.hero.imageUrl).toContain('hero-new')
-    expect(payload.featuredProjects).toHaveLength(3)
+    expect(payload.featuredProjects).toHaveLength(9)
     expect(
       payload.featuredProjects.every((project) => project.imageUrl === ''),
     ).toBe(true)
-    expect(saved.featuredProjects).toHaveLength(3)
+    expect(saved.featuredProjects).toHaveLength(9)
   })
 
   it('rejects a partially filled card instead of treating it as blank', async () => {

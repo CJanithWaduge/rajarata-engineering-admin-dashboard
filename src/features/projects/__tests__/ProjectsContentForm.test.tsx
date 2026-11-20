@@ -62,6 +62,23 @@ describe('ProjectsContentForm', { timeout: 20_000 }, () => {
     ).toHaveLength(6)
   })
 
+  it('ticks and unticks the Project Page and submits the flag', async () => {
+    const user = userEvent.setup()
+    const onSubmit = renderForm(validContent())
+
+    const tick = screen.getByRole('checkbox', { name: /Project Page/ })
+    expect(tick).toBeChecked()
+
+    await user.click(tick)
+    expect(tick).not.toBeChecked()
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeEnabled()
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledTimes(1))
+    expect(onSubmit.mock.calls[0]?.[0].pageVisible).toBe(false)
+  })
+
   it('links contact changes to Site Settings instead of rendering inputs', async () => {
     const user = userEvent.setup()
     renderForm(validContent())

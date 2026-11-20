@@ -26,6 +26,7 @@ export function emptyProject(): FeaturedProject {
     venue: '',
     topic: '',
     tag: '',
+    visible: true,
   }
 }
 
@@ -37,6 +38,7 @@ export function createEmptyCard(): CardDraft {
     venue: '',
     topic: '',
     tag: '',
+    visible: true,
   }
 }
 
@@ -77,6 +79,7 @@ export function draftFromContent(content: HomeContent | null): HomeDraft {
         venue: project.venue,
         topic: project.topic,
         tag: project.tag,
+        visible: project.visible !== false,
       }
     }),
     services: Array.from({ length: HOME_SERVICE_COUNT }, (_, index) => {

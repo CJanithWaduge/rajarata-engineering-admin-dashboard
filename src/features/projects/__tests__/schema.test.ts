@@ -78,6 +78,7 @@ describe('projectsFormSchema', () => {
     expect(keys.sort()).toEqual([
       'cta',
       'hero',
+      'pageVisible',
       'portfolio',
       'trackRecord',
     ])

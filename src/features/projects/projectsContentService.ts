@@ -71,6 +71,7 @@ function toProjectsContent(data: Record<string, unknown>): ProjectsContent {
   }
 
   return {
+    pageVisible: parsed.data.pageVisible,
     hero: parsed.data.hero,
     portfolio: {
       projects: parsed.data.portfolio.projects.map((project) => {
@@ -222,6 +223,7 @@ export async function saveProjectsContent(
     }
 
     await setDoc(PROJECTS_REF, {
+      pageVisible: values.pageVisible,
       hero: values.hero,
       portfolio: {
         projects: values.portfolio.projects.map((project, index) => {
@@ -246,6 +248,7 @@ export async function saveProjectsContent(
     }
 
     return {
+      pageVisible: values.pageVisible,
       hero: values.hero,
       portfolio: {
         projects: values.portfolio.projects.map((project, index) => ({

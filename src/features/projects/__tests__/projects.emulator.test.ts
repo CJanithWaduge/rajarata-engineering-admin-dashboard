@@ -85,6 +85,7 @@ function payload(draft: ProjectsDraft) {
     portfolio: { projects },
     trackRecord: draft.trackRecord,
     cta: draft.cta,
+    pageVisible: draft.pageVisible,
     updatedAt: serverTimestamp(),
     updatedBy: uid,
   }

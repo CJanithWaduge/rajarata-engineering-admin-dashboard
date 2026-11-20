@@ -35,6 +35,7 @@ export function createEmptyProject(index: number): ProjectFormValues {
 /** Empty form state only. No site copy or seed values live here. */
 export function createEmptyProjectsValues(): ProjectsFormValues {
   return {
+    pageVisible: true,
     hero: { eyebrow: '', title: '', intro: '' },
     portfolio: {
       projects: Array.from({ length: PROJECT_COUNT }, (_, index) =>
@@ -55,6 +56,7 @@ export function valuesFromContent(
   if (!content) return createEmptyProjectsValues()
 
   return {
+    pageVisible: content.pageVisible,
     hero: {
       eyebrow: content.hero.eyebrow,
       title: content.hero.title,

@@ -233,6 +233,19 @@ export function HomeContentForm({
     setDirty(true)
   }
 
+  const handleCardToggleVisible = (index: number, visible: boolean) => {
+    setDraft((current) => ({
+      ...current,
+      cards: current.cards.map((card, cardIndex) =>
+        cardIndex === index ? { ...card, visible } : card,
+      ),
+    }))
+    // The "at least three cards must stay visible" error is attached to card 1;
+    // re-showing any card resolves it, so clear it as soon as the user toggles.
+    clearTextError('cards.0.visible')
+    setDirty(true)
+  }
+
   const handleServiceChange = (
     index: number,
     field: HomeServiceTextField,
@@ -400,7 +413,9 @@ export function HomeContentForm({
           </h2>
           <p className="mt-1 font-body-md text-body-md text-secondary">
             Fill only the card you want to change. Blank cards keep the public site&apos;s
-            current content; saving writes the whole document atomically.
+            current content; saving writes the whole document atomically. Turn
+            Show off to hide a card from the public carousel without deleting it;
+            keep at least three cards on for a complete desktop row.
           </p>
         </div>
 
@@ -415,6 +430,7 @@ export function HomeContentForm({
             disabled={isSaving}
             open={openCards[index] ?? true}
             onToggle={() => toggleCard(index)}
+            onToggleVisible={(visible) => handleCardToggleVisible(index, visible)}
             onImageSelect={(file) =>
               void handleImageSelect(`card-${index}`, 'card', file)
             }

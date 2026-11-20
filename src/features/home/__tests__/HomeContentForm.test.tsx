@@ -42,6 +42,7 @@ function content(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'Industrial Distribution',
         tag: 'MV / LV',
+        visible: true,
       },
       {
         image: image('card-2'),
@@ -49,6 +50,7 @@ function content(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'Commercial Panels',
         tag: 'Panels',
+        visible: true,
       },
       {
         image: image('card-3'),
@@ -56,6 +58,7 @@ function content(): HomeContent {
         venue: 'Anuradhapura',
         topic: 'ELV Systems',
         tag: 'Automation',
+        visible: true,
       },
     ],
     featuredServices: [
@@ -115,11 +118,11 @@ describe('HomeContentForm', () => {
     vi.unstubAllGlobals()
   })
 
-  it('renders the stored hero and all three cards', () => {
+  it('renders the stored hero and all nine cards', () => {
     renderForm()
 
     expect(screen.getByRole('heading', { name: 'Hero image' })).toBeInTheDocument()
-    expect(screen.getAllByLabelText('Category')).toHaveLength(3)
+    expect(screen.getAllByLabelText('Category')).toHaveLength(9)
     expect(screen.getByDisplayValue('Industrial')).toBeInTheDocument()
     expect(screen.getByDisplayValue('Commercial')).toBeInTheDocument()
     expect(screen.getByDisplayValue('ELV')).toBeInTheDocument()
@@ -204,6 +207,68 @@ describe('HomeContentForm', () => {
 
     expect(await screen.findByText('Category is required.')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Collapse Card 1' })).toBeInTheDocument()
+  })
+
+  it('renders nine visibility toggles, all on', () => {
+    renderForm()
+
+    const toggles = screen.getAllByRole('switch')
+    expect(toggles).toHaveLength(9)
+    for (const toggle of toggles) expect(toggle).toBeChecked()
+  })
+
+  it('hides a card when its toggle is switched off and saves the state', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    const toggles = screen.getAllByRole('switch')
+    await user.click(toggles[8]!)
+
+    expect(screen.getAllByRole('switch')[8]).not.toBeChecked()
+    expect(screen.getAllByRole('switch')[7]).toBeChecked()
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(mocks.onSubmit).toHaveBeenCalledTimes(1)
+    const draft = mocks.onSubmit.mock.calls[0]?.[0] as HomeDraft
+    expect(draft.cards[8]?.visible).toBe(false)
+    expect(draft.cards[7]?.visible).toBe(true)
+  })
+
+  it('blocks saving when fewer than three cards are visible', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    // Leave only cards 1–2 on; the desktop row needs three.
+    for (let index = 2; index < 9; index += 1) {
+      await user.click(screen.getAllByRole('switch')[index]!)
+    }
+    expect(
+      screen.getAllByRole('switch').filter((toggle) => (toggle as HTMLInputElement).checked),
+    ).toHaveLength(2)
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(
+      await screen.findByText('At least 3 Featured Engineering Projects cards must stay visible.'),
+    ).toBeInTheDocument()
+    expect(mocks.onSubmit).not.toHaveBeenCalled()
+  })
+
+  it('saves when exactly three cards are visible', async () => {
+    const user = userEvent.setup()
+    renderForm()
+
+    // Leave cards 1–3 on: a complete desktop row is allowed.
+    for (let index = 3; index < 9; index += 1) {
+      await user.click(screen.getAllByRole('switch')[index]!)
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Save changes' }))
+
+    expect(mocks.onSubmit).toHaveBeenCalledTimes(1)
+    const draft = mocks.onSubmit.mock.calls[0]?.[0] as HomeDraft
+    expect(draft.cards.filter((card) => card.visible !== false)).toHaveLength(3)
   })
 
   it('submits an edit to one card without touching the others', async () => {
@@ -409,8 +474,8 @@ describe('HomeContentForm', () => {
   it('renders a blank form when there is no stored document', () => {
     renderForm(null)
 
-    expect(screen.getAllByText('No image selected')).toHaveLength(4)
-    expect(screen.getAllByLabelText('Category')).toHaveLength(3)
+    expect(screen.getAllByText('No image selected')).toHaveLength(10)
+    expect(screen.getAllByLabelText('Category')).toHaveLength(9)
     expect(screen.getAllByLabelText('Category')[0]).toHaveValue('')
   })
 
@@ -418,6 +483,6 @@ describe('HomeContentForm', () => {
     renderForm(null)
 
     expect(screen.getByText(/Exactly 1920 × 1080 px \(16:9\)/)).toBeInTheDocument()
-    expect(screen.getAllByText(/Exactly 1200 × 800 px \(3:2\)/)).toHaveLength(3)
+    expect(screen.getAllByText(/Exactly 1200 × 800 px \(3:2\)/)).toHaveLength(9)
   })
 })

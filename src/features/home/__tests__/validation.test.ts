@@ -32,7 +32,7 @@ describe('validateHomeDraft', () => {
 
     expect(result.textErrors).toEqual({})
     expect(result.imageErrors).toEqual({})
-    expect(result.blankCards).toEqual([true, true, true])
+    expect(result.blankCards).toEqual(Array.from({ length: 9 }, () => true))
     expect(result.normalized.hero.image.kind).toBe('none')
   })
 
@@ -44,9 +44,54 @@ describe('validateHomeDraft', () => {
 
     expect(result.textErrors).toEqual({})
     expect(result.imageErrors).toEqual({})
-    expect(result.blankCards).toEqual([true, false, true])
+    expect(result.blankCards).toEqual([
+      true,
+      false,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+      true,
+    ])
     expect(result.normalized.cards[1]?.category).toBe('Industrial')
     expect(result.normalized.cards[0]?.image.kind).toBe('none')
+  })
+
+  it('normalizes visibility on the normalized cards', () => {
+    const draft = createEmptyDraft()
+    draft.cards[2] = { ...draft.cards[2]!, visible: false }
+
+    const result = validateHomeDraft(draft)
+
+    expect(result.textErrors).toEqual({})
+    expect(result.normalized.cards[2]?.visible).toBe(false)
+    expect(result.normalized.cards[0]?.visible).toBe(true)
+  })
+
+  it('flags a draft with fewer than three visible cards', () => {
+    const draft = createEmptyDraft()
+    draft.cards.forEach((card, index) => {
+      card.visible = index < 2
+    })
+
+    const result = validateHomeDraft(draft)
+
+    expect(result.textErrors['cards.0.visible']).toMatch(
+      /At least 3 Featured Engineering Projects cards must stay visible/,
+    )
+  })
+
+  it('accepts a draft with exactly three visible cards', () => {
+    const draft = createEmptyDraft()
+    draft.cards.forEach((card, index) => {
+      card.visible = index < 3
+    })
+
+    const result = validateHomeDraft(draft)
+
+    expect(result.textErrors).toEqual({})
   })
 
   it('accepts a complete project card without an uploaded image', () => {

@@ -157,7 +157,8 @@ describe('home CRUD against the Firebase emulators', () => {
     expect(stored.exists).toBe(true)
     expect(stored.content?.hero.url).toBe(saved.hero.url)
     expect(stored.content?.hero.alt).toBe(saved.hero.alt)
-    expect(stored.content?.featuredProjects).toHaveLength(3)
+    expect(stored.content?.featuredProjects).toHaveLength(9)
+    expect(stored.content?.featuredProjects[0]?.visible).toBe(true)
     expect(
       stored.content?.featuredProjects.every((project) => project.image.url === ''),
     ).toBe(true)

@@ -1,3 +1,5 @@
+import { Switch } from '../../../components/ui/Switch'
+import { MIN_VISIBLE_CARDS } from '../constants'
 import { TextField } from '../../../components/ui/TextField'
 import type { ExistingMediaCandidate } from '../existingMedia'
 import { formatBytes } from '../imageValidation'
@@ -15,6 +17,7 @@ type Props = {
   disabled: boolean
   open: boolean
   onToggle: () => void
+  onToggleVisible: (visible: boolean) => void
   onImageSelect: (file: File) => void
   onOptimizeApprove: (candidate: ExistingMediaCandidate) => void
   onChange: (field: CardTextField, value: string) => void
@@ -49,21 +52,38 @@ export function FeaturedProjectEditor({
   disabled,
   open,
   onToggle,
+  onToggleVisible,
   onImageSelect,
   onOptimizeApprove,
   onChange,
 }: Props) {
   const errorFor = (field: CardTextField) => errors[`cards.${index}.${field}`]
+  const visibleError = errors[`cards.${index}.visible`] ?? null
   const fieldId = (field: CardTextField) => `home-card-${index}-${field}`
+  const visible = card.visible !== false
 
   return (
     <CollapsibleSection
       title={`Card ${index + 1}`}
-      description="Image, category, venue, topic, and tag for this slot. Leave it blank to keep the current card."
+      description={
+        visible
+          ? 'Image, category, venue, topic, and tag for this slot. Leave it blank to keep the current card.'
+          : 'This card is hidden from the public Home page. Turn Show on to re-enable it.'
+      }
       open={open}
       onToggle={onToggle}
       headingLevel={3}
       contentClassName="grid gap-5 px-6 py-5 sm:grid-cols-2"
+      actions={
+        <Switch
+          id={`home-card-${index}-visible`}
+          label="Show"
+          hint={`Show card ${index + 1} on the public Home page carousel. At least ${MIN_VISIBLE_CARDS} cards must stay visible.`}
+          checked={visible}
+          disabled={disabled}
+          onChange={(event) => onToggleVisible(event.target.checked)}
+        />
+      }
       badge={
         card.image.kind === 'new' ? (
           <span className="rounded-chip bg-primary-container/10 px-2.5 py-1 font-label-caps text-label-caps uppercase tracking-wider text-primary">
@@ -72,6 +92,12 @@ export function FeaturedProjectEditor({
         ) : null
       }
     >
+      {visibleError ? (
+        <p className="sm:col-span-2 rounded-control border border-primary-container/40 bg-primary-container/5 px-4 py-3 font-body-sm text-body-sm text-primary-container">
+          {visibleError}
+        </p>
+      ) : null}
+
       <div className="sm:col-span-2">
         <HomeImageField
           id={`home-card-${index}-file`}

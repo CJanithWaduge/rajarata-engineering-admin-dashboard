@@ -44,6 +44,9 @@ const trackRecordColumnSchema = z.object({
 })
 
 export const projectsFormSchema = z.object({
+  pageVisible: z.boolean({
+    message: 'Project Page visibility must be true or false.',
+  }),
   hero: z.object({
     eyebrow: optionalText('Hero eyebrow', PROJECT_TEXT_LIMITS.heroEyebrow),
     title: optionalText('Hero title', PROJECT_TEXT_LIMITS.heroTitle),
@@ -119,6 +122,8 @@ const storedProjectSchema = projectSchema
   })
 
 export const projectsContentSchema = z.object({
+  // Absent on documents written before the tick existed; default to visible.
+  pageVisible: z.boolean().default(true),
   hero: z.object({
     eyebrow: optionalText('Hero eyebrow', PROJECT_TEXT_LIMITS.heroEyebrow),
     title: optionalText('Hero title', PROJECT_TEXT_LIMITS.heroTitle),

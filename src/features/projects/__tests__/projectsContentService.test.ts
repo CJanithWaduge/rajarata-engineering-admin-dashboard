@@ -80,6 +80,39 @@ describe('projectsContentService', () => {
     expect(result.content?.updatedBy).toBe('uid-2')
   })
 
+  it('treats a document written before the tick existed as visible', async () => {
+    mocks.getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => validStoredDocument(),
+    })
+
+    const result = await getProjectsContent()
+
+    expect(result.content?.pageVisible).toBe(true)
+  })
+
+  it('reads an unticked Project Page back as false', async () => {
+    mocks.getDoc.mockResolvedValue({
+      exists: () => true,
+      data: () => ({ ...validStoredDocument(), pageVisible: false }),
+    })
+
+    const result = await getProjectsContent()
+
+    expect(result.content?.pageVisible).toBe(false)
+  })
+
+  it('writes an unticked Project Page as false', async () => {
+    const draft = validDraft()
+    draft.pageVisible = false
+
+    const saved = await saveProjectsContent(draft, 'uid-1', null)
+
+    const payload = mocks.setDoc.mock.calls[0]?.[1] as Record<string, unknown>
+    expect(payload.pageVisible).toBe(false)
+    expect(saved.pageVisible).toBe(false)
+  })
+
   it('refuses a malformed stored document', async () => {
     const stored = validStoredDocument()
     mocks.getDoc.mockResolvedValue({
@@ -108,6 +141,7 @@ describe('projectsContentService', () => {
     expect(Object.keys(payload).sort()).toEqual([
       'cta',
       'hero',
+      'pageVisible',
       'portfolio',
       'trackRecord',
       'updatedAt',
@@ -115,6 +149,7 @@ describe('projectsContentService', () => {
     ])
     expect(payload.updatedAt).toBe('server-ts')
     expect(payload.updatedBy).toBe('uid-1')
+    expect(payload.pageVisible).toBe(true)
     expect((payload.hero as { title: string }).title).toBe('Updated title')
     expect(saved.hero.title).toBe('Updated title')
     expect(saved.portfolio.projects).toHaveLength(6)

@@ -12,6 +12,7 @@ import {
   SettingsIcon,
 } from '../components/layout/icons'
 import { getSettings } from '../features/settings/settingsService'
+import { CARD_COUNT } from '../features/home/constants'
 import { getHomeContent } from '../features/home/homeContentService'
 import { getServicesContent } from '../features/services/servicesContentService'
 import { getAboutContent } from '../features/about/aboutContentService'
@@ -135,7 +136,7 @@ export function DashboardPage() {
               exists,
               updatedAt: content?.updatedAt ?? null,
               updatedBy: content?.updatedBy ?? null,
-              metric: `${cards} of 3 featured projects configured`,
+              metric: `${cards} of ${CARD_COUNT} featured projects configured`,
             }
           },
         },

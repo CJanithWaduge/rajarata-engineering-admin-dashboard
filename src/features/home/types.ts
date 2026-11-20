@@ -17,6 +17,8 @@ export type FeaturedProject = {
   venue: string
   topic: string
   tag: string
+  /** False hides the card from the public Home page carousel; the data is kept. */
+  visible: boolean
 }
 
 /**
@@ -72,6 +74,8 @@ export type CardDraft = {
   venue: string
   topic: string
   tag: string
+  /** Optional toggle state; undefined means visible. */
+  visible?: boolean
 }
 
 export type CardTextField = 'alt' | 'category' | 'venue' | 'topic' | 'tag'

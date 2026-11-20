@@ -20,6 +20,8 @@ const EMPTY_IMAGE = {
  * seeding never invents media, so the public artwork remains.
  */
 export const SEED_PROJECTS: ProjectsContent = {
+  // Seeding restores the public page, so it comes back visible.
+  pageVisible: true,
   hero: {
     eyebrow: 'Work We Take On',
     title: 'Electrical Work & Capabilities',

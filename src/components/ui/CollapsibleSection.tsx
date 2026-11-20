@@ -7,6 +7,8 @@ type Props = {
   open: boolean
   onToggle: () => void
   badge?: ReactNode
+  /** Controls shown in the header, left of the collapse button. */
+  actions?: ReactNode
   headingLevel?: 2 | 3
   contentClassName?: string
   children: ReactNode
@@ -24,6 +26,7 @@ export function CollapsibleSection({
   open,
   onToggle,
   badge,
+  actions,
   headingLevel = 2,
   contentClassName = 'px-6 py-5',
   children,
@@ -41,8 +44,9 @@ export function CollapsibleSection({
           <p className="mt-1 font-body-sm text-body-sm text-secondary">{description}</p>
         </div>
 
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 items-center gap-3">
           {badge}
+          {actions}
           <button
             type="button"
             aria-expanded={open}

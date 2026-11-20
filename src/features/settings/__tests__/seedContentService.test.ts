@@ -70,14 +70,26 @@ describe('seedAllContent', () => {
       home.cards.every((card: { image: { kind: string } }) => card.image.kind === 'none'),
     ).toBe(true)
     expect(home.cards.map((card: { topic: string }) => card.topic)).toEqual([
-      'Industrial Power Distribution & Installations',
-      'MDB / SMDB Panels & Commercial Wiring',
-      'ELV Systems & Building Automation',
+      'CCTV Security Systems & Installations',
+      'Indoor Electrical Wiring & Installations',
+      'Solar Power Systems & Installations',
+      'Industrial Power Distribution & Installation',
+      'Commercial Panel & Distribution Work',
+      'ELV & Building Automation Systems',
+      'Residential & Commercial Wiring',
+      'Lightning & Surge Protection Systems',
+      'Electrical Testing & Commissioning',
     ])
     expect(home.cards.map((card: { category: string }) => card.category)).toEqual([
+      'Security Systems',
+      'Residential',
+      'Commercial',
       'Industrial',
       'Commercial',
-      'ELV',
+      'ELV Solutions',
+      'Residential',
+      'Lightning Protection',
+      'Testing & Commissioning',
     ])
 
     const about = mocks.saveAboutContent.mock.calls[0]![0]

@@ -1,5 +1,5 @@
 import { cardTextSchema, heroTextSchema, homeServiceSchema } from './schema'
-import { HOME_SERVICE_COUNT } from './constants'
+import { HOME_SERVICE_COUNT, MIN_VISIBLE_CARDS } from './constants'
 import { createEmptyService } from './defaults'
 import type { CardDraft, HomeDraft, HomeService } from './types'
 
@@ -55,6 +55,9 @@ export function validateHomeDraft(draft: HomeDraft): HomeDraftValidation {
   }
 
   const cards: CardDraft[] = draft.cards.map((card, index) => {
+    // A hidden card keeps its data but is not visible on the public page.
+    const visible = card.visible !== false
+
     if (blankCards[index]) {
       return {
         image: { kind: 'none' },
@@ -63,6 +66,7 @@ export function validateHomeDraft(draft: HomeDraft): HomeDraftValidation {
         venue: '',
         topic: '',
         tag: '',
+        visible,
       }
     }
 
@@ -78,6 +82,7 @@ export function validateHomeDraft(draft: HomeDraft): HomeDraftValidation {
       return {
         image: card.image,
         ...parsed.data,
+        visible,
       }
     }
 
@@ -95,8 +100,17 @@ export function validateHomeDraft(draft: HomeDraft): HomeDraftValidation {
       venue: card.venue.trim(),
       topic: card.topic.trim(),
       tag: card.tag.trim(),
+      visible,
     }
   })
+
+  // Keep at least a full desktop row visible: the public carousel shows three
+  // cards per row, so fewer than three would leave an incomplete row.
+  const visibleCount = cards.filter((card) => card.visible !== false).length
+  if (visibleCount < MIN_VISIBLE_CARDS) {
+    textErrors['cards.0.visible'] =
+      `At least ${MIN_VISIBLE_CARDS} Featured Engineering Projects cards must stay visible.`
+  }
 
   const services: HomeService[] = (draft.services || [])
     .slice(0, HOME_SERVICE_COUNT)

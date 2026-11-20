@@ -18,7 +18,7 @@ const SERVICE = {
 
 const HOME = {
   heroAlt: 'A technician at an electrical distribution panel',
-  cards: [CARD, CARD, CARD],
+  cards: Array.from({ length: 9 }, () => CARD),
   services: [SERVICE, SERVICE, SERVICE],
 }
 
@@ -83,8 +83,11 @@ describe('homeServiceSchema', () => {
 })
 
 describe('homeTextSchema', () => {
-  it('requires three cards', () => {
-    expect(homeTextSchema.safeParse({ ...HOME, cards: [CARD, CARD] }).success).toBe(false)
+  it('requires nine cards', () => {
+    expect(
+      homeTextSchema.safeParse({ ...HOME, cards: Array.from({ length: 8 }, () => CARD) })
+        .success,
+    ).toBe(false)
     expect(homeTextSchema.safeParse(HOME).success).toBe(true)
   })
 

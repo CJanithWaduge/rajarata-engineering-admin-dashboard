@@ -3,6 +3,7 @@ import { useForm, type FieldErrors } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Alert } from '../../../components/ui/Alert'
 import { Button } from '../../../components/ui/Button'
+import { Checkbox } from '../../../components/ui/Checkbox'
 import { CollapsibleSection } from '../../../components/ui/CollapsibleSection'
 import { UnsavedChangesGuard } from '../../../components/ui/UnsavedChangesGuard'
 import { PROJECT_COUNT } from '../constants'
@@ -228,6 +229,16 @@ export function ProjectsContentForm({
   return (
     <form className="flex flex-col gap-6" onSubmit={submit} noValidate>
       {errorMessage ? <Alert variant="error">{errorMessage}</Alert> : null}
+
+      <div className="rounded-card border border-outline-variant bg-surface px-6 py-5 shadow-card">
+        <Checkbox
+          id="projects-page-visible"
+          label="Project Page"
+          hint="Ticked: the Projects page is live and linked from the header and footer. Untick to hide it temporarily — every link to it disappears and /projects redirects to the home page."
+          disabled={isSaving}
+          {...register('pageVisible')}
+        />
+      </div>
 
       <Alert variant="info">
         Every text field is optional; leave one blank to keep the public page’s

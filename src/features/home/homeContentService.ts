@@ -63,6 +63,8 @@ function readProject(value: unknown): FeaturedProject {
     venue: readString(record.venue),
     topic: readString(record.topic),
     tag: readString(record.tag),
+    // Older documents have no flag; only an explicit `false` hides the card.
+    visible: record.visible !== false,
   }
 }
 
@@ -104,6 +106,7 @@ function toDocProject(project: FeaturedProject) {
     venue: project.venue,
     topic: project.topic,
     tag: project.tag,
+    visible: project.visible,
   }
 }
 
@@ -251,6 +254,11 @@ export async function saveHomeContent(
       }
 
       if (validation.blankCards[index] === true) {
+        // A blank card keeps its data on the public site; persist the
+        // visibility choice too so a hidden blank slot stays hidden.
+        if (card.visible === false) {
+          projects[index] = { ...emptyProject(), visible: false }
+        }
         continue
       }
 
@@ -261,6 +269,7 @@ export async function saveHomeContent(
           venue: card.venue,
           topic: card.topic,
           tag: card.tag,
+          visible: card.visible !== false,
         }
         continue
       }
@@ -275,6 +284,7 @@ export async function saveHomeContent(
             venue: card.venue,
             topic: card.topic,
             tag: card.tag,
+            visible: card.visible !== false,
           }
         }),
       )

@@ -25,6 +25,7 @@ describe('seedHomeDraft', () => {
           venue: 'Old venue',
           topic: 'Old title',
           tag: 'Old tag',
+          visible: true,
         },
         {
           image: image('project-2'),
@@ -32,6 +33,7 @@ describe('seedHomeDraft', () => {
           venue: 'Old venue',
           topic: 'Old title',
           tag: 'Old tag',
+          visible: true,
         },
         {
           image: image('project-3'),
@@ -39,7 +41,29 @@ describe('seedHomeDraft', () => {
           venue: 'Old venue',
           topic: 'Old title',
           tag: 'Old tag',
+          visible: true,
         },
+        // The other six slots stay blank so the seed writes nine slots.
+        ...Array.from(
+          { length: 6 },
+          () =>
+            ({
+              image: {
+                url: '',
+                path: '',
+                alt: '',
+                width: 0,
+                height: 0,
+                size: 0,
+                contentType: '',
+              },
+              category: '',
+              venue: '',
+              topic: '',
+              tag: '',
+              visible: true,
+            }) satisfies HomeContent['featuredProjects'][number],
+        ),
       ],
       featuredServices: [],
       updatedAt: null,
@@ -50,16 +74,23 @@ describe('seedHomeDraft', () => {
 
     expect(draft.hero.image).toEqual({ kind: 'stored', image: previous.hero })
     expect(draft.cards.map((card) => card.topic)).toEqual([
-      'Industrial Power Distribution & Installations',
-      'MDB / SMDB Panels & Commercial Wiring',
-      'ELV Systems & Building Automation',
+      'CCTV Security Systems & Installations',
+      'Indoor Electrical Wiring & Installations',
+      'Solar Power Systems & Installations',
+      'Industrial Power Distribution & Installation',
+      'Commercial Panel & Distribution Work',
+      'ELV & Building Automation Systems',
+      'Residential & Commercial Wiring',
+      'Lightning & Surge Protection Systems',
+      'Electrical Testing & Commissioning',
     ])
-    expect(draft.cards.map((card) => card.image)).toEqual(
-      previous.featuredProjects.map((project) => ({
+    expect(draft.cards.slice(0, 3).map((card) => card.image)).toEqual(
+      previous.featuredProjects.slice(0, 3).map((project) => ({
         kind: 'stored',
         image: project.image,
       })),
     )
+    expect(draft.cards.slice(3).every((card) => card.image.kind === 'none')).toBe(true)
     expect(draft.cards[0]?.alt).toBe('Existing project-1 photograph')
   })
 
@@ -83,7 +114,7 @@ describe('seedHomeDraft', () => {
     const draft = seedHomeDraft()
 
     expect(draft.hero.image.kind).toBe('none')
-    expect(draft.cards).toHaveLength(3)
+    expect(draft.cards).toHaveLength(9)
     expect(draft.cards.every((card) => card.image.kind === 'none')).toBe(true)
     expect(draft.cards.every((card) => card.topic !== '')).toBe(true)
   })
